@@ -1,0 +1,7 @@
+/coverage/
+/dist/
+/gen/
+*.test
+*.out
+*.log
+.DS_Store
