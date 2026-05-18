@@ -37,6 +37,7 @@ func MarkStepRunning(
 	next.Status = workflowruntimev1.WorkflowStepStatus_WORKFLOW_STEP_STATUS_RUNNING
 	next.CurrentAttempt = attempt
 	next.LastError = nil
+	next.ClosedAt = nil
 	if next.StartedAt == nil {
 		next.StartedAt = now
 	}

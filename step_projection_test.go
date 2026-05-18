@@ -47,6 +47,14 @@ func TestStepProjectionFailureCanWaitForRetrySignal(t *testing.T) {
 	if !StepWaitsForRetrySignal(failed) {
 		t.Fatal("StepWaitsForRetrySignal() returned false")
 	}
+
+	retried := MarkStepRunning(failed, 2, timestamppb.Now())
+	if retried.GetClosedAt() != nil {
+		t.Fatal("retrying step must clear closed_at")
+	}
+	if retried.GetLastError() != nil {
+		t.Fatal("retrying step must clear last error")
+	}
 }
 
 func TestStepProjectionDefaultsToFailWorkflow(t *testing.T) {
