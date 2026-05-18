@@ -2,15 +2,14 @@
 
 `workflow-runtime` 是注册系统的 Temporal/worker 运行时基础设施仓。
 
-## 边界
+## 职责
 
-- 本仓只提供通用运行时能力，不放任何业务 workflow、activity 或状态机。
-- 本仓计划开源，不能依赖私有契约仓、私有 SDK 仓或闭源业务仓。
+- 提供通用 Temporal/worker 运行时能力。
+- 面向开源基础设施场景维护。
 - 跨仓共享的 workflow runtime 模型来自公开 `contracts/workflowruntime` proto。
-- 各业务仓自己拥有自己的 workflow、activity、worker、内部 proto 和业务数据。
-- Temporal history 只记录执行过程，不作为业务事实源；业务事实由业务服务自己的数据库、事件和读模型维护。
-- 本仓不直接依赖任何业务仓。
-- 本仓当前不暴露 gRPC 服务；业务开放接口由各业务仓用自己的 gRPC 服务承载，避免形成统一编排服务。
+- 各业务仓声明自己的 workflow、activity、worker、内部 proto 和业务数据。
+- Temporal history 记录执行过程；业务事实由业务服务自己的数据库、事件和读模型维护。
+- 业务开放接口由各业务仓用自己的 gRPC 服务承载。
 
 ## 提供能力
 
@@ -30,7 +29,7 @@
 - `TEMPORAL_TASK_QUEUE`
 - `TEMPORAL_IDENTITY`
 
-`TEMPORAL_ADDRESS`、`TEMPORAL_NAMESPACE`、`TEMPORAL_TASK_QUEUE` 为必填配置。本仓不提供隐式生产默认值，避免错误环境被静默掩盖。
+`TEMPORAL_ADDRESS`、`TEMPORAL_NAMESPACE`、`TEMPORAL_TASK_QUEUE` 为必填配置。
 
 ## 业务仓使用方式
 
@@ -69,7 +68,7 @@ go vet ./...
 
 ## 生成物
 
-本仓当前没有 IDL 生成流程。未来如果加入 proto 或其他生成源，生成物仍不提交仓库。
+本仓当前没有 IDL 生成流程。未来如果加入 proto 或其他生成源，生成输出按仓库生成规则处理。
 
 ## 贡献与安全
 
