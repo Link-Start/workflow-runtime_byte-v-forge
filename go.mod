@@ -5,7 +5,7 @@ go 1.26
 toolchain go1.26.3
 
 require (
-	github.com/byte-v-forge/contracts-go v0.1.0
+	github.com/byte-v-forge/contracts-go v0.6.0
 	go.temporal.io/sdk v1.43.0
 	google.golang.org/protobuf v1.36.11
 )

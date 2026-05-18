@@ -17,6 +17,8 @@
 - Worker spec 校验、注册和按 `context.Context` 生命周期运行。
 - Task queue 命名校验。
 - 默认 activity timeout 和 retry policy。
+- 步骤级状态投影和失败策略辅助函数。
+- Temporal activity retryable/non-retryable application error 包装。
 - `contracts/workflowruntime` proto 与 Temporal Go SDK policy 的转换。
 - 环境变量配置加载。
 
@@ -57,6 +59,13 @@ return workflowruntime.RunWorker(ctx, temporalClient, workflowruntime.WorkerSpec
     },
 })
 ```
+
+步骤失败处理建议：
+
+- 临时故障使用 activity retry policy 自动重试。
+- 业务不可重试错误使用 `NewNonRetryableActivityError`，避免 Temporal 反复执行。
+- 需要人工或外部修复后继续的步骤投影为 `WAITING_RETRY`，由业务 workflow 接收 retry signal 后重新执行对应 activity。
+- 允许失败后继续的步骤使用 `WORKFLOW_STEP_FAILURE_STRATEGY_CONTINUE_WORKFLOW`，业务 workflow 记录失败投影后继续后续步骤。
 
 ## 验证
 
