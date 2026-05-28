@@ -1,0 +1,4 @@
+webui/node_modules/
+webui/dist/
+*.log
+.DS_Store
