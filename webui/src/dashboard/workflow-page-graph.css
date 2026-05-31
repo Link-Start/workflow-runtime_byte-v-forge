@@ -1,0 +1,115 @@
+.workflowGraphPanel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.workflowGraphPanel.fullscreen {
+  position: fixed;
+  inset: 14px;
+  z-index: 80;
+  background: var(--card);
+  box-shadow: 0 24px 80px rgb(15 23 42 / 22%);
+}
+
+.workflowGraphHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+  padding: 12px 14px;
+}
+
+.workflowGraphHeader > div:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.workflowGraphHeader strong,
+.workflowGraphHeader > div:first-child span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workflowGraphHeader > div:first-child span,
+.workflowGraphHeaderMeta {
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+
+.workflowGraphHeaderMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.workflowGraphBody {
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+}
+
+.workflowGraphBody.hasInspector {
+  grid-template-columns: minmax(420px, 1fr) 220px;
+}
+
+.workflowRuntimeGraph {
+  height: 100%;
+  min-height: 0;
+}
+
+.workflowNodeInspector {
+  min-width: 0;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  padding: 12px;
+}
+
+.workflowNodeInspector.muted {
+  color: var(--muted-foreground);
+}
+
+.workflowInspectorTitle {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-weight: 780;
+}
+
+.workflowInspectorTitle span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.workflowNodeInspector dl {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.workflowNodeInspector dt {
+  color: var(--muted-foreground);
+  font-size: 11px;
+  font-weight: 760;
+}
+
+.workflowNodeInspector dd {
+  margin: -4px 0 4px;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+
+@media (max-width: 860px) {
+  .workflowGraphBody { grid-template-columns: 1fr; }
+  .workflowRuntimeGraph { min-height: 460px; }
+}

@@ -15,11 +15,14 @@ import (
 type dashboardServer struct {
 	staticDir       string
 	workflowRuntime *workflowRuntimeClient
+	projections     *workflowProjectionStore
 }
 
 func (s *dashboardServer) routes() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/workflow-runtime/summary", s.handleWorkflowRuntimeSummary)
+	mux.HandleFunc("/api/workflow-runtime/streams/state", s.handleWorkflowRuntimeStream)
+	mux.HandleFunc("/api/workflow-runtime/runs/steps", s.handleWorkflowStepUpdate)
 	mux.Handle("/mf/workflow-runtime/", http.StripPrefix("/mf/workflow-runtime/", noCacheFileServer(s.staticDir)))
 	mux.HandleFunc("/healthz", s.handleHealth)
 	mux.HandleFunc("/api/health", s.handleHealth)
@@ -36,7 +39,7 @@ func (s *dashboardServer) handleWorkflowRuntimeSummary(w http.ResponseWriter, r 
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	writeProtoJSON(w, http.StatusOK, s.workflowRuntime.summary(r.Context()))
+	writeProtoJSON(w, http.StatusOK, s.workflowSummary(r))
 }
 
 func withCORS(next http.Handler) http.Handler {

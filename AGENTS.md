@@ -14,3 +14,4 @@
 - 后端使用 Go，配置来自环境变量，secret 只通过 Kubernetes Secret 注入。
 - 前端只发布 module federation dashboard module；shell 装载由 `deploy/frontend-modules.json` 声明。
 - 不做历史回放；前端展示当前投影/查询结果，运行态后续通过事件/投影扩展。
+- Linter 检查必须达到 0 error / 0 warning；禁止通过修改或放宽 linter 配置、降低规则级别、删除规则、添加 ignore/disable/nolint/ts-ignore/eslint-disable/biome-ignore/prettier-ignore 等方式绕过问题，只能按 linter 规则修复源码、类型、格式或依赖边界。

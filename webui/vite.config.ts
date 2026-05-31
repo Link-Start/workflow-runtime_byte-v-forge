@@ -6,6 +6,7 @@ import { federation } from '@module-federation/vite';
 
 const linkedPeerAliases = [
   { find: /^@tanstack\/react-query$/, replacement: path.resolve(__dirname, 'node_modules/@tanstack/react-query') },
+  { find: /^@xyflow\/react$/, replacement: path.resolve(__dirname, 'node_modules/@xyflow/react') },
   { find: /^class-variance-authority$/, replacement: path.resolve(__dirname, 'node_modules/class-variance-authority') },
   { find: /^clsx$/, replacement: path.resolve(__dirname, 'node_modules/clsx') },
   { find: /^lucide-react$/, replacement: path.resolve(__dirname, 'node_modules/lucide-react') },
@@ -37,6 +38,7 @@ export default defineConfig({
         'react-dom': { singleton: true },
         'react-dom/client': { singleton: true },
         '@tanstack/react-query': { singleton: true },
+        '@xyflow/react': { singleton: true },
         '@byte-v-forge/common-ui': { singleton: true },
         'lucide-react': { singleton: true }
       }

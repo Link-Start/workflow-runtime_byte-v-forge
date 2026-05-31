@@ -21,7 +21,8 @@ func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	cfg := loadConfig()
 	server := &dashboardServer{
-		staticDir: cfg.DashboardStaticDir,
+		staticDir:   cfg.DashboardStaticDir,
+		projections: newWorkflowProjectionStore(),
 		workflowRuntime: newWorkflowRuntimeClient(workflowRuntimeConfig{
 			InternalURL: cfg.N8NInternalURL,
 			EditorURL:   cfg.N8NPublicURL,

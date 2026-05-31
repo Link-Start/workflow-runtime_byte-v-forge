@@ -1,0 +1,87 @@
+.contentPane:has(.workflowRuntimePanel) {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.contentPane:has(.workflowRuntimePanel) > .workspace,
+.workflowRuntimePanel {
+  height: 100%;
+  min-height: 0;
+}
+
+.workflowRuntimePanel { gap: 12px; }
+
+.workflowRuntimeLayout {
+  height: 100%;
+  min-height: 0;
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(300px, 340px) minmax(0, 1fr);
+  gap: 12px;
+}
+
+.workflowSidebar,
+.workflowGraphPanel {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--card);
+}
+
+.workflowSidebarTabs {
+  height: 100%;
+  min-height: 0;
+  gap: 0;
+}
+
+.workflowSidebarTabsList {
+  margin: 10px 10px 0;
+  width: calc(100% - 20px);
+}
+
+.workflowSidebarContent {
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+
+.workflowPagedList {
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.workflowRecordList {
+  min-height: 0;
+  flex: 1;
+  grid-template-columns: 1fr;
+  padding: 10px;
+}
+
+.workflowRecordCard {
+  height: auto;
+  min-height: 96px;
+  grid-template-rows: auto auto;
+}
+
+.workflowRecordCard .recordIdentity {
+  align-items: flex-start;
+}
+
+.workflowRecordFields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.workflowDefinitionFields {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 1180px) {
+  .workflowRuntimeLayout { grid-template-columns: 1fr; }
+  .workflowSidebar { min-height: 360px; }
+}
