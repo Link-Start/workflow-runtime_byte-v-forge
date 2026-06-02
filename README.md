@@ -20,6 +20,15 @@ n8n HTTP Request 节点上报体示例：
 
 ```json
 {
+  "context": {
+    "event_id": "workflow-step-{{$execution.id}}-{{$json.node_id}}-{{$json.step_sequence}}",
+    "event_name": "workflow.step.updated",
+    "event_version": "v1",
+    "occurred_at": "{{new Date().toISOString()}}",
+    "source_service": "n8n",
+    "correlation_id": "{{$execution.id}}",
+    "idempotency_key": "workflow-step-{{$execution.id}}-{{$json.node_id}}-{{$json.step_sequence}}"
+  },
   "run_id": "{{$json.run_id}}",
   "workflow_id": "{{$workflow.id}}",
   "workflow_name": "{{$workflow.name}}",
@@ -30,12 +39,14 @@ n8n HTTP Request 节点上报体示例：
 }
 ```
 
-节点完成后将 `status` 改为 `WORKFLOW_RUN_SUCCEEDED`；失败分支使用 `WORKFLOW_RUN_FAILED` 并传 `error_message`。
+请求需携带 `Authorization: Bearer $WORKFLOW_RUNTIME_STEP_UPDATE_TOKEN` 或 `X-Workflow-Runtime-Token`。节点完成后将 `status` 改为 `WORKFLOW_RUN_SUCCEEDED`；失败分支使用 `WORKFLOW_RUN_FAILED` 并传 `error_message`。同一 `context.idempotency_key` 重复上报会返回 `duplicate: true`。
 
 ## 运行配置
 
 - `WORKFLOW_RUNTIME_HTTP_ADDR`：HTTP 监听地址，默认 `:8080`。
 - `WORKFLOW_RUNTIME_DASHBOARD_STATIC_DIR`：远程前端静态目录，默认 `/app/dashboard/workflow-runtime`。
+- `WORKFLOW_RUNTIME_DATABASE_URL`：workflow-runtime 自有 PostgreSQL DSN，用于持久化 run/step 投影。
+- `WORKFLOW_RUNTIME_STEP_UPDATE_TOKEN`：n8n 节点状态上报鉴权 token，仅通过 secret 注入。
 - `N8N_INTERNAL_URL`：集群内 n8n main 地址。
 - `N8N_PUBLIC_URL`：管理员 editor 公网入口。
 - `N8N_API_KEY`：n8n public API key。

@@ -17,21 +17,25 @@ func (s *dashboardServer) handleWorkflowStepUpdate(w http.ResponseWriter, r *htt
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	if !s.authorizeWorkflowStepUpdate(r) {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
 	var req workflowv1.WorkflowStepUpdateRequest
 	if err := protojsonhttp.ReadRequest(r, &req); err != nil {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
-	if req.GetRunId() == "" && req.GetExecutionId() == "" && req.GetWorkflowId() == "" {
-		http.Error(w, "run_id or execution_id or workflow_id is required", http.StatusBadRequest)
+	if err := validateWorkflowStepUpdate(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if req.GetNodeId() == "" && req.GetNodeName() == "" {
-		http.Error(w, "node_id or node_name is required", http.StatusBadRequest)
+	result, err := s.projections.apply(r.Context(), &req)
+	if err != nil {
+		http.Error(w, "workflow projection store unavailable", http.StatusServiceUnavailable)
 		return
 	}
-	run := s.projections.apply(&req)
-	writeProtoJSON(w, http.StatusOK, &workflowv1.WorkflowStepUpdateResponse{Run: run})
+	writeProtoJSON(w, http.StatusOK, &workflowv1.WorkflowStepUpdateResponse{Run: result.run, Duplicate: result.duplicate})
 }
 
 func (s *dashboardServer) workflowSummary(r *http.Request) *workflowv1.WorkflowRuntimeSummary {
@@ -40,7 +44,12 @@ func (s *dashboardServer) workflowSummary(r *http.Request) *workflowv1.WorkflowR
 
 func (s *dashboardServer) workflowSummaryForContext(ctx context.Context, pages workflowSummaryPageRequest) *workflowv1.WorkflowRuntimeSummary {
 	summary := s.workflowRuntime.summary(ctx, pages)
-	runs := mergeLiveExecutionRuns(s.projections.list(), summary.GetExecutions())
+	projected, err := s.projections.list(ctx)
+	if err != nil {
+		summary.ApiStatus = workflowv1.WorkflowRuntimeStatus_WORKFLOW_RUNTIME_DEGRADED
+		summary.ApiMessage = "workflow projection store unavailable"
+	}
+	runs := mergeLiveExecutionRuns(projected, summary.GetExecutions())
 	pagedRuns, nextRunToken := paginateWorkflowRuns(runs, pages.runs)
 	summary.Runs = pagedRuns
 	summary.RunsPageInfo = workflowPageInfo(pages.runs, len(pagedRuns), nextRunToken)

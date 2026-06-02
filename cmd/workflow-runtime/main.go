@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log/slog"
 	"net/http"
 	"os"
@@ -15,14 +16,23 @@ type config struct {
 	N8NInternalURL     string
 	N8NPublicURL       string
 	N8NAPIKey          string
+	DatabaseURL        string
+	StepUpdateToken    string
 }
 
 func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	cfg := loadConfig()
+	projectionStore, err := newWorkflowProjectionStore(context.Background(), workflowProjectionStoreConfig{DatabaseURL: cfg.DatabaseURL})
+	if err != nil {
+		logger.Error("workflow-runtime projection store unavailable", "error", err)
+		os.Exit(1)
+	}
+	defer projectionStore.close()
 	server := &dashboardServer{
-		staticDir:   cfg.DashboardStaticDir,
-		projections: newWorkflowProjectionStore(),
+		staticDir:       cfg.DashboardStaticDir,
+		projections:     projectionStore,
+		stepUpdateToken: cfg.StepUpdateToken,
 		workflowRuntime: newWorkflowRuntimeClient(workflowRuntimeConfig{
 			InternalURL: cfg.N8NInternalURL,
 			EditorURL:   cfg.N8NPublicURL,
@@ -49,5 +59,7 @@ func loadConfig() config {
 		N8NInternalURL:     envx.StringDefault("N8N_INTERNAL_URL", ""),
 		N8NPublicURL:       envx.StringDefault("N8N_PUBLIC_URL", ""),
 		N8NAPIKey:          envx.StringDefault("N8N_API_KEY", ""),
+		DatabaseURL:        envx.StringDefault("WORKFLOW_RUNTIME_DATABASE_URL", ""),
+		StepUpdateToken:    envx.StringDefault("WORKFLOW_RUNTIME_STEP_UPDATE_TOKEN", ""),
 	}
 }

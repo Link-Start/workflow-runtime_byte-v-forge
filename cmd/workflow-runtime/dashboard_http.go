@@ -14,6 +14,7 @@ import (
 
 type dashboardServer struct {
 	staticDir       string
+	stepUpdateToken string
 	workflowRuntime *workflowRuntimeClient
 	projections     *workflowProjectionStore
 }
@@ -45,7 +46,7 @@ func (s *dashboardServer) handleWorkflowRuntimeSummary(w http.ResponseWriter, r 
 func withCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		w.Header().Set("Access-Control-Allow-Headers", "Authorization,Content-Type,X-Workflow-Runtime-Token")
 		w.Header().Set("Access-Control-Allow-Methods", "GET,POST,PATCH,PUT,DELETE,OPTIONS")
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
