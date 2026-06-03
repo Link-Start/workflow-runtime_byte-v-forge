@@ -122,7 +122,9 @@ func (s *workflowProjectionStore) list(ctx context.Context) ([]*workflowv1.Workf
 	if err := rows.Err(); err != nil {
 		return nil, errWorkflowDatabaseUnavailable
 	}
-	sort.SliceStable(out, func(i, j int) bool { return out[i].GetUpdatedAtUnix() > out[j].GetUpdatedAtUnix() })
+	sort.SliceStable(out, func(i, j int) bool {
+		return timestampUnix(out[i].GetUpdatedAt()) > timestampUnix(out[j].GetUpdatedAt())
+	})
 	return out, nil
 }
 
@@ -149,7 +151,7 @@ func (s *workflowProjectionStore) apply(ctx context.Context, req *workflowv1.Wor
 	now := time.Now().Unix()
 	occurred := workflowOccurredAtUnix(req, now)
 	runID := stableRunID(req)
-	idempotencyKey := strings.TrimSpace(req.GetContext().GetIdempotencyKey())
+	idempotencyKey := strings.TrimSpace(req.GetMetadata().GetIdempotencyKey())
 	if idempotencyKey == "" {
 		return workflowStepApplyResult{}, errWorkflowStepContextInvalid
 	}
@@ -180,7 +182,7 @@ func (s *workflowProjectionStore) apply(ctx context.Context, req *workflowv1.Wor
 		return workflowStepApplyResult{}, err
 	}
 	if run == nil {
-		run = &workflowv1.WorkflowRunProjection{RunId: runID, StartedAtUnix: occurred}
+		run = &workflowv1.WorkflowRunProjection{RunId: runID, StartedAt: timestampFromUnix(occurred)}
 	}
 	applyWorkflowStepUpdate(run, req, stableNodeID(req), occurred)
 	if err := saveWorkflowProjection(ctx, tx, run); err != nil {
@@ -240,7 +242,7 @@ INSERT INTO workflow_runtime_run_projections (run_id, updated_at_unix, projectio
 VALUES ($1, $2, $3)
 ON CONFLICT (run_id) DO UPDATE SET
   updated_at_unix = EXCLUDED.updated_at_unix,
-  projection = EXCLUDED.projection`, run.GetRunId(), run.GetUpdatedAtUnix(), payload)
+  projection = EXCLUDED.projection`, run.GetRunId(), timestampUnix(run.GetUpdatedAt()), payload)
 	if err != nil {
 		return errWorkflowDatabaseUnavailable
 	}
@@ -256,7 +258,7 @@ func applyWorkflowStepUpdate(run *workflowv1.WorkflowRunProjection, req *workflo
 	applyRunStatus(run, req.GetStatus(), occurred, req.GetErrorMessage())
 	run.CurrentNodeId = nodeID
 	run.CurrentNodeName = strings.TrimSpace(req.GetNodeName())
-	run.UpdatedAtUnix = occurred
+	run.UpdatedAt = timestampFromUnix(occurred)
 	applyNodeStatus(run, req, nodeID, occurred)
 }
 
@@ -287,10 +289,10 @@ func (s *workflowProjectionStore) notify() {
 }
 
 func workflowOccurredAtUnix(req *workflowv1.WorkflowStepUpdateRequest, fallback int64) int64 {
-	if req.GetOccurredAtUnix() > 0 {
-		return req.GetOccurredAtUnix()
+	if ts := req.GetOccurredAt(); ts != nil && ts.IsValid() {
+		return ts.AsTime().Unix()
 	}
-	if ts := req.GetContext().GetOccurredAt(); ts != nil && ts.IsValid() {
+	if ts := req.GetMetadata().GetTime(); ts != nil && ts.IsValid() {
 		return ts.AsTime().Unix()
 	}
 	return fallback

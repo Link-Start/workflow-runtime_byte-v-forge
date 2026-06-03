@@ -1,9 +1,13 @@
 package main
 
-import "strings"
+import (
+	"strings"
+
+	workflowv1 "github.com/byte-v-forge/common-lib/gen/go/byte/v/forge/contracts/workflow/v1"
+)
 
 type nodeRunData struct {
-	Status        string
+	Status        workflowv1.WorkflowGraphElementStatus
 	StartedAtUnix int64
 	DurationMs    int64
 	ErrorMessage  string
@@ -14,7 +18,7 @@ func nodeRunProjection(name string, runData n8nRunData, result n8nResultData, ex
 	tasks := runData[name]
 	if len(tasks) == 0 {
 		if result.LastNodeExecuted == name && (executionStatus == "running" || executionStatus == "waiting") {
-			return nodeRunData{Status: executionStatus}
+			return nodeRunData{Status: graphStatusFromString(executionStatus)}
 		}
 		return nodeRunData{}
 	}
@@ -31,7 +35,7 @@ func nodeRunProjection(name string, runData n8nRunData, result n8nResultData, ex
 		status = "error"
 	}
 	return nodeRunData{
-		Status:        status,
+		Status:        graphStatusFromString(status),
 		StartedAtUnix: millisToUnix(task.StartTime),
 		DurationMs:    task.ExecutionTime,
 		ErrorMessage:  err,
@@ -39,33 +43,33 @@ func nodeRunProjection(name string, runData n8nRunData, result n8nResultData, ex
 	}
 }
 
-func unexecutedNodeStatus(executionStatus string, hasRunData bool) string {
+func unexecutedNodeStatus(executionStatus string, hasRunData bool) workflowv1.WorkflowGraphElementStatus {
 	if !hasRunData {
-		return ""
+		return workflowv1.WorkflowGraphElementStatus_WORKFLOW_GRAPH_ELEMENT_STATUS_UNSPECIFIED
 	}
 	switch strings.ToLower(strings.TrimSpace(executionStatus)) {
 	case "success", "error", "failed", "crashed", "canceled", "cancelled", "aborted":
-		return "skipped"
+		return workflowv1.WorkflowGraphElementStatus_WORKFLOW_GRAPH_ELEMENT_SKIPPED
 	case "running", "waiting", "new", "pending", "created", "queued":
-		return "pending"
+		return workflowv1.WorkflowGraphElementStatus_WORKFLOW_GRAPH_ELEMENT_PENDING
 	default:
-		return ""
+		return workflowv1.WorkflowGraphElementStatus_WORKFLOW_GRAPH_ELEMENT_STATUS_UNSPECIFIED
 	}
 }
 
-func edgeExecutionStatus(sourceName string, targetName string, runData n8nRunData) string {
+func edgeExecutionStatus(sourceName string, targetName string, runData n8nRunData) workflowv1.WorkflowGraphElementStatus {
 	if len(runData) == 0 {
-		return ""
+		return workflowv1.WorkflowGraphElementStatus_WORKFLOW_GRAPH_ELEMENT_STATUS_UNSPECIFIED
 	}
 	targetTasks := runData[targetName]
 	if len(targetTasks) == 0 {
-		return ""
+		return workflowv1.WorkflowGraphElementStatus_WORKFLOW_GRAPH_ELEMENT_STATUS_UNSPECIFIED
 	}
 	if errorMessage(targetTasks[len(targetTasks)-1].Error) != "" {
-		return "error"
+		return workflowv1.WorkflowGraphElementStatus_WORKFLOW_GRAPH_ELEMENT_FAILED
 	}
 	if len(runData[sourceName]) > 0 {
-		return "success"
+		return workflowv1.WorkflowGraphElementStatus_WORKFLOW_GRAPH_ELEMENT_SUCCEEDED
 	}
-	return ""
+	return workflowv1.WorkflowGraphElementStatus_WORKFLOW_GRAPH_ELEMENT_STATUS_UNSPECIFIED
 }

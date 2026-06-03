@@ -8,6 +8,7 @@ import (
 	"time"
 
 	workflowv1 "github.com/byte-v-forge/common-lib/gen/go/byte/v/forge/contracts/workflow/v1"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type workflowRuntimeClient struct {
@@ -39,7 +40,7 @@ func (c *workflowRuntimeClient) summary(ctx context.Context, pages workflowSumma
 		ApiMessage:         "n8n API key is not configured",
 		ApiConfigured:      false,
 		EditorUrl:          c.editorURL,
-		CheckedAtUnix:      time.Now().Unix(),
+		CheckedAt:          timestamppb.Now(),
 		ExecutionsPageInfo: workflowPageInfo(pages.executions, 0, ""),
 	}
 	if c.internalURL == "" {

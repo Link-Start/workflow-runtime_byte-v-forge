@@ -28,21 +28,21 @@ func workflowGraphNodes(nodes []n8nNode, status string, runData n8nRunData, resu
 		}
 		run := nodeRunProjection(node.Name, runData, result, status)
 		graphNode := &workflowv1.WorkflowGraphNode{
-			Id:            id,
-			Name:          node.Name,
-			Kind:          shortNodeType(node.Type),
-			Status:        run.Status,
-			TypeVersion:   valueString(node.TypeVersion),
-			Disabled:      node.Disabled,
-			StartedAtUnix: run.StartedAtUnix,
-			DurationMs:    run.DurationMs,
-			ErrorMessage:  run.ErrorMessage,
-			Iterations:    run.Iterations,
+			Id:           id,
+			Name:         node.Name,
+			Kind:         shortNodeType(node.Type),
+			Status:       run.Status,
+			TypeVersion:  valueString(node.TypeVersion),
+			Disabled:     node.Disabled,
+			StartedAt:    timestampFromUnix(run.StartedAtUnix),
+			DurationMs:   run.DurationMs,
+			ErrorMessage: run.ErrorMessage,
+			Iterations:   run.Iterations,
 		}
-		if graphNode.Status == "" && node.Disabled {
-			graphNode.Status = "skipped"
+		if graphNode.Status == workflowv1.WorkflowGraphElementStatus_WORKFLOW_GRAPH_ELEMENT_STATUS_UNSPECIFIED && node.Disabled {
+			graphNode.Status = workflowv1.WorkflowGraphElementStatus_WORKFLOW_GRAPH_ELEMENT_SKIPPED
 		}
-		if graphNode.Status == "" {
+		if graphNode.Status == workflowv1.WorkflowGraphElementStatus_WORKFLOW_GRAPH_ELEMENT_STATUS_UNSPECIFIED {
 			graphNode.Status = unexecutedNodeStatus(status, len(runData) > 0)
 		}
 		if len(node.Position) >= 2 {

@@ -6,9 +6,9 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
+	commonv1 "github.com/byte-v-forge/common-lib/gen/go/byte/v/forge/contracts/common/v1"
 	observabilityv1 "github.com/byte-v-forge/common-lib/gen/go/byte/v/forge/contracts/observability/v1"
 	workflowv1 "github.com/byte-v-forge/common-lib/gen/go/byte/v/forge/contracts/workflow/v1"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -65,13 +65,18 @@ func prepareSSE(w http.ResponseWriter) {
 
 func workflowSummaryHotStreamEvent(summary *workflowv1.WorkflowRuntimeSummary) *observabilityv1.HotStreamEvent {
 	return &observabilityv1.HotStreamEvent{
-		EventId:       fmt.Sprintf("workflow-runtime-summary-%d", time.Now().UnixNano()),
-		EventType:     workflowSummaryEventType,
-		SourceService: "workflow-runtime",
-		ResourceType:  "workflow-runtime",
-		ResourceId:    "summary",
-		Scope:         "platform",
-		OccurredAt:    timestamppb.Now(),
+		Metadata: &commonv1.EventMetadata{
+			Id:              fmt.Sprintf("workflow-runtime-summary-%d", time.Now().UnixNano()),
+			Type:            workflowSummaryEventType,
+			Version:         "v1",
+			Time:            timestamppb.Now(),
+			Source:          "workflow-runtime",
+			SpecVersion:     "1.0",
+			DataContentType: "application/x-protobuf",
+		},
+		ResourceType: "workflow-runtime",
+		ResourceId:   "summary",
+		Scope:        "platform",
 		Attributes: map[string]string{
 			"api_status":      summary.GetApiStatus().String(),
 			"engine_status":   summary.GetEngineStatus().String(),
@@ -85,7 +90,7 @@ func workflowSummaryHotStreamEvent(summary *workflowv1.WorkflowRuntimeSummary) *
 
 func workflowSummaryFingerprint(summary *workflowv1.WorkflowRuntimeSummary) string {
 	clone := proto.Clone(summary).(*workflowv1.WorkflowRuntimeSummary)
-	clone.CheckedAtUnix = 0
+	clone.CheckedAt = nil
 	payload, err := protojson.MarshalOptions{EmitUnpopulated: true}.Marshal(clone)
 	if err != nil {
 		payload = []byte(fmt.Sprintf("%v", clone))
@@ -109,8 +114,8 @@ func workflowSummaryHasLiveExecution(summary *workflowv1.WorkflowRuntimeSummary)
 		}
 	}
 	for _, execution := range summary.GetExecutions() {
-		switch strings.ToLower(strings.TrimSpace(execution.GetStatus())) {
-		case "new", "running", "waiting":
+		switch execution.GetStatus() {
+		case workflowv1.WorkflowRunStatus_WORKFLOW_RUN_PENDING, workflowv1.WorkflowRunStatus_WORKFLOW_RUN_RUNNING, workflowv1.WorkflowRunStatus_WORKFLOW_RUN_WAITING:
 			return true
 		}
 	}

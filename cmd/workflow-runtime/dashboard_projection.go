@@ -9,6 +9,7 @@ import (
 
 	workflowv1 "github.com/byte-v-forge/common-lib/gen/go/byte/v/forge/contracts/workflow/v1"
 	"github.com/byte-v-forge/common-lib/protojsonhttp"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (s *dashboardServer) handleWorkflowStepUpdate(w http.ResponseWriter, r *http.Request) {
@@ -64,7 +65,7 @@ func mergeLiveExecutionRuns(projected []*workflowv1.WorkflowRunProjection, execu
 		remember(seen, run.GetExecutionId())
 	}
 	for _, execution := range executions {
-		status := runStatusFromString(execution.GetStatus())
+		status := execution.GetStatus()
 		if !isRealtimeRunStatus(status) || execution.GetId() == "" {
 			continue
 		}
@@ -76,16 +77,17 @@ func mergeLiveExecutionRuns(projected []*workflowv1.WorkflowRunProjection, execu
 		remember(seen, run.GetRunId())
 		remember(seen, run.GetExecutionId())
 	}
-	sort.SliceStable(out, func(i, j int) bool { return out[i].GetUpdatedAtUnix() > out[j].GetUpdatedAtUnix() })
+	sort.SliceStable(out, func(i, j int) bool {
+		return timestampUnix(out[i].GetUpdatedAt()) > timestampUnix(out[j].GetUpdatedAt())
+	})
 	return out
 }
 
 func liveExecutionRun(execution *workflowv1.WorkflowExecution, status workflowv1.WorkflowRunStatus) *workflowv1.WorkflowRunProjection {
-	started := parseRuntimeTime(execution.GetStartedAt())
-	stopped := parseRuntimeTime(execution.GetStoppedAt())
-	updated := stopped
-	if updated <= 0 {
-		updated = time.Now().Unix()
+	started := execution.GetStartedAt()
+	updated := execution.GetStoppedAt()
+	if updated == nil {
+		updated = timestamppb.New(time.Now())
 	}
 	nodeID, nodeName := currentExecutionNode(execution.GetGraphNodes())
 	return &workflowv1.WorkflowRunProjection{
@@ -96,8 +98,8 @@ func liveExecutionRun(execution *workflowv1.WorkflowExecution, status workflowv1
 		Status:          status,
 		CurrentNodeId:   nodeID,
 		CurrentNodeName: nodeName,
-		StartedAtUnix:   started,
-		UpdatedAtUnix:   updated,
+		StartedAt:       started,
+		UpdatedAt:       updated,
 		GraphNodes:      execution.GetGraphNodes(),
 		GraphEdges:      execution.GetGraphEdges(),
 	}
@@ -105,12 +107,13 @@ func liveExecutionRun(execution *workflowv1.WorkflowExecution, status workflowv1
 
 func currentExecutionNode(nodes []*workflowv1.WorkflowGraphNode) (string, string) {
 	for _, node := range nodes {
-		if node.GetStatus() == "running" || node.GetStatus() == "waiting" {
+		if node.GetStatus() == workflowv1.WorkflowGraphElementStatus_WORKFLOW_GRAPH_ELEMENT_RUNNING {
 			return node.GetId(), node.GetName()
 		}
 	}
 	for i := len(nodes) - 1; i >= 0; i-- {
-		if nodes[i].GetStatus() != "" && nodes[i].GetStatus() != "pending" {
+		if nodes[i].GetStatus() != workflowv1.WorkflowGraphElementStatus_WORKFLOW_GRAPH_ELEMENT_STATUS_UNSPECIFIED &&
+			nodes[i].GetStatus() != workflowv1.WorkflowGraphElementStatus_WORKFLOW_GRAPH_ELEMENT_PENDING {
 			return nodes[i].GetId(), nodes[i].GetName()
 		}
 	}
@@ -128,15 +131,25 @@ func isRealtimeRunStatus(status workflowv1.WorkflowRunStatus) bool {
 	}
 }
 
-func parseRuntimeTime(value string) int64 {
+func runtimeTimestamp(value string) *timestamppb.Timestamp {
 	trimmed := strings.TrimSpace(value)
 	if trimmed == "" {
-		return 0
+		return nil
 	}
 	if parsed, err := time.Parse(time.RFC3339Nano, trimmed); err == nil {
-		return parsed.Unix()
+		return timestamppb.New(parsed)
 	}
-	return 0
+	return nil
+}
+
+func timestampUnix(value *timestamppb.Timestamp) int64 {
+	if value == nil {
+		return 0
+	}
+	if err := value.CheckValid(); err != nil {
+		return 0
+	}
+	return value.AsTime().Unix()
 }
 
 func remember(index map[string]struct{}, value string) {

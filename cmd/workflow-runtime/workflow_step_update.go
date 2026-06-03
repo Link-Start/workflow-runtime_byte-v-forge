@@ -52,13 +52,13 @@ func validateWorkflowStepUpdate(req *workflowv1.WorkflowStepUpdateRequest) error
 	if req.GetNodeId() == "" && req.GetNodeName() == "" {
 		return errors.New("node_id or node_name is required")
 	}
-	if err := eventbus.ValidateContext(req.GetContext()); err != nil {
+	if err := eventbus.ValidateMetadata(req.GetMetadata()); err != nil {
 		return errWorkflowStepContextInvalid
 	}
-	if strings.TrimSpace(req.GetContext().GetEventName()) != workflowStepUpdateEventName {
+	if strings.TrimSpace(req.GetMetadata().GetType()) != workflowStepUpdateEventName {
 		return errWorkflowStepContextInvalid
 	}
-	if strings.TrimSpace(req.GetContext().GetEventVersion()) != eventbus.DefaultEventVersion {
+	if strings.TrimSpace(req.GetMetadata().GetVersion()) != eventbus.DefaultEventVersion {
 		return errWorkflowStepContextInvalid
 	}
 	return nil
