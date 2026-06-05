@@ -33,14 +33,10 @@ export default defineConfig({
       },
       shared: {
         react: { singleton: true },
-        'react/jsx-runtime': { singleton: true },
-        'react/jsx-dev-runtime': { singleton: true },
         'react-dom': { singleton: true },
-        'react-dom/client': { singleton: true },
         '@tanstack/react-query': { singleton: true },
         '@xyflow/react': { singleton: true },
-        '@byte-v-forge/common-ui': { singleton: true },
-        'lucide-react': { singleton: true }
+        '@byte-v-forge/common-ui': { singleton: true }
       }
     })
   ],
